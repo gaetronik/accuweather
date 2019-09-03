@@ -54,11 +54,15 @@ impl Accuweather {
     /// ```
 
     pub fn new(api_key: String, location: Option<i32>) -> Self {
+        #[cfg(not(test))]
+        let url = "http://dataservice.accuweather.com";
+        #[cfg(test)]
+        let url = &mockito::server_url();
         Accuweather {
             api_key,
             location,
             client: reqwest::Client::builder().build().unwrap(),
-            base_url: "http://dataservice.accuweather.com".to_string(),
+            base_url: url.to_string(),
         }
     }
 
@@ -192,8 +196,137 @@ impl Accuweather {
 }
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use mockito::{mock, Matcher};
+    use std::fs;
+
+    fn set_mocks() -> Vec<mockito::Mock> {
+        let mut res = Vec::new();
+        let daily5_json = fs::read_to_string("assets/daily5.json").unwrap();
+        let _mdnokforbidden = mock("GET", "/forecasts/v1/daily/5day/12345")
+            .with_status(403)
+            .create();
+        res.push(_mdnokforbidden);
+        let _mdok = mock("GET", "/forecasts/v1/daily/5day/12345")
+            .with_status(200)
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("apikey".into(), "abcdefg".into()),
+                Matcher::UrlEncoded("details".into(), "true".into()),
+                Matcher::UrlEncoded("metric".into(), "true".into()),
+            ]))
+            .with_body(&daily5_json)
+            .create();
+        res.push(_mdok);
+        let hourly12_json = fs::read_to_string("assets/hourly12.json").unwrap();
+        let _mhnokforbidden = mock("GET", "/forecasts/v1/hourly/12hour/12345")
+            .with_status(403)
+            .create();
+        res.push(_mhnokforbidden);
+        let _mhok = mock("GET", "/forecasts/v1/hourly/12hour/12345")
+            .with_status(200)
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("apikey".into(), "abcdefg".into()),
+                Matcher::UrlEncoded("details".into(), "true".into()),
+                Matcher::UrlEncoded("metric".into(), "true".into()),
+            ]))
+            .with_body(&hourly12_json)
+            .create();
+        res.push(_mhok);
+
+        let conditions_json = fs::read_to_string("assets/conditions.json").unwrap();
+        let _mcnokforbidden = mock("GET", "/currentconditions/v1/12345")
+            .with_status(403)
+            .create();
+        res.push(_mcnokforbidden);
+        let _mcok = mock("GET", "/currentconditions/v1/12345")
+            .with_status(200)
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("apikey".into(), "abcdefg".into()),
+                Matcher::UrlEncoded("details".into(), "true".into()),
+                Matcher::UrlEncoded("language".into(), "en-us".into()),
+            ]))
+            .with_body(&conditions_json)
+            .create();
+        res.push(_mcok);
+
+        res
+    }
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn test_daily_forecast_ok() {
+        let _mocks = set_mocks();
+        let api_key = "abcdefg".to_string();
+        let client = Accuweather::new(api_key, Some(12345));
+        let res_forecasts = client.get_daily_forecasts(5);
+        let forecasts = res_forecasts.unwrap();
+        assert_eq!(forecasts.daily_forecasts[0].temperature.minimum.value, 5.4);
+    }
+    #[test]
+    fn test_daily_forecast_nok_forbidden() {
+        let _mocks = set_mocks();
+        let api_key = "bad_key".to_string();
+        let client = Accuweather::new(api_key, Some(12345));
+        let res_forecasts = client.get_daily_forecasts(5);
+        assert!(res_forecasts.is_err());
+    }
+    #[test]
+    fn test_daily_forecast_nok_badlocation() {
+        let _mocks = set_mocks();
+        let api_key = "bad_key".to_string();
+        let client = Accuweather::new(api_key, Some(123456));
+        let res_forecasts = client.get_daily_forecasts(5);
+        assert!(res_forecasts.is_err());
+    }
+
+    #[test]
+    fn test_hourly_forecast_ok() {
+        let _mocks = set_mocks();
+        let api_key = "abcdefg".to_string();
+        let client = Accuweather::new(api_key, Some(12345));
+        let res_forecasts = client.get_hourly_forecasts(12);
+        let forecasts = res_forecasts.unwrap();
+        assert_eq!(forecasts[11].temperature.value, 7.2);
+    }
+    #[test]
+    fn test_hourly_forecast_nok_forbidden() {
+        let _mocks = set_mocks();
+        let api_key = "bad_key".to_string();
+        let client = Accuweather::new(api_key, Some(12345));
+        let res_forecasts = client.get_hourly_forecasts(12);
+        assert!(res_forecasts.is_err());
+    }
+    #[test]
+    fn test_hourly_forecast_nok_badlocation() {
+        let _mocks = set_mocks();
+        let api_key = "bad_key".to_string();
+        let client = Accuweather::new(api_key, Some(123456));
+        let res_forecasts = client.get_hourly_forecasts(12);
+        assert!(res_forecasts.is_err());
+    }
+
+    #[test]
+    fn test_current_condition_ok() {
+        let _mocks = set_mocks();
+        let api_key = "abcdefg".to_string();
+        let client = Accuweather::new(api_key, Some(12345));
+        let res_conditions = client.get_current_conditions();
+        let conditions = res_conditions.unwrap();
+        assert_eq!(conditions[0].temperature.metric.value, 27.9);
+    }
+    #[test]
+    fn test_current_condition_nok_forbidden() {
+        let _mocks = set_mocks();
+        let api_key = "bad_key".to_string();
+        let client = Accuweather::new(api_key, Some(12345));
+        let res_conditions = client.get_current_conditions();
+        assert!(res_conditions.is_err());
+    }
+    #[test]
+    fn test_current_condition_nok_badlocation() {
+        let _mocks = set_mocks();
+        let api_key = "bad_key".to_string();
+        let client = Accuweather::new(api_key, Some(123456));
+        let res_conditions = client.get_current_conditions();
+        assert!(res_conditions.is_err());
     }
 }
