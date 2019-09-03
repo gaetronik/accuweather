@@ -7,18 +7,18 @@ use std::fmt;
 #[derive(Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct AccuweatherMeasurement {
-/// the actual value
+    /// the actual value
     pub value: f32,
-/// the unit
+    /// the unit
     pub unit: String,
-/// Accuweather internal unit representation
+    /// Accuweather internal unit representation
     unit_type: i32,
 }
 
 impl AccuweatherMeasurement {
-  pub fn print(&self) {
-    println!("{} {}",self.value, self.unit);
-  }
+    pub fn print(&self) {
+        println!("{} {}", self.value, self.unit);
+    }
 }
 
 impl fmt::Debug for AccuweatherMeasurement {
@@ -214,22 +214,21 @@ pub struct HourlyForecast {
     pub wind_gust: DailyWindGust,
 }
 
-
 /// Representation of LocalSource for current condition api.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct LocalSource {
-  pub id: i32,
-  pub name: String,
-  pub weather_code: String,
+    pub id: i32,
+    pub name: String,
+    pub weather_code: String,
 }
 
 /// Representation of a measurement in current condition api.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct ConditionMeasurement {
-  pub metric: AccuweatherMeasurement,
-  pub imperial: AccuweatherMeasurement,
+    pub metric: AccuweatherMeasurement,
+    pub imperial: AccuweatherMeasurement,
 }
 
 /// Representation of pressure tendency in current condition api.
@@ -289,7 +288,7 @@ pub struct ConditionWindGust {
 /// Representation of Current Condion in current condition api.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
-pub struct CurrentCondition{
+pub struct CurrentCondition {
     pub local_observation_date_time: String,
     pub epoch_time: i64,
     pub weather_text: String,
