@@ -1,3 +1,21 @@
+//! # Accuweather a crate to interact with accuweather api
+//! This crate provides a client to accuweather forecast and current conditions api.
+//! At the moment there is only three functions to interact with the api
+//!
+//! # Example
+//! ```
+//! extern crate accuweather;
+//!
+//! let api_key = "abcdefg".to_string();
+//! let client = accuweather::Accuweather::new(api_key, Some(12345), None);
+//! // get next 12 hours of hourly forecasts
+//! let hourly_forecasts = client.get_hourly_forecasts(12);
+//! 
+//! let daily_forecasts = client.get_daily_forecasts(5);
+//! let conditions = client.get_current_conditions();
+
+
+
 extern crate reqwest;
 #[macro_use]
 extern crate serde_derive;
@@ -36,6 +54,7 @@ pub struct Accuweather {
     pub client: Client,
     pub api_key: String,
     pub location: Option<i32>,
+    pub language: String,
     base_url: String,
 }
 
@@ -49,18 +68,23 @@ impl Accuweather {
     /// ```
     /// fn main() {
     ///    let api_key = "abcdefg".to_string();
-    ///    let client = accuweather::Accuweather::new(api_key, None);
+    ///    let client = accuweather::Accuweather::new(api_key, None, None);
     /// }
     /// ```
 
-    pub fn new(api_key: String, location: Option<i32>) -> Self {
+    pub fn new(api_key: String, location: Option<i32>, language: Option<String>) -> Self {
         #[cfg(not(test))]
         let url = "http://dataservice.accuweather.com";
         #[cfg(test)]
         let url = &mockito::server_url();
+        let language = match language {
+            Some(l) => l,
+            None => "en-us".to_string(),
+        };
         Accuweather {
             api_key,
             location,
+            language,
             client: reqwest::Client::builder().build().unwrap(),
             base_url: url.to_string(),
         }
@@ -72,7 +96,7 @@ impl Accuweather {
     /// # Example
     /// ```
     ///  let api_key = "abcdefg".to_string();
-    ///  let mut client = accuweather::Accuweather::new(api_key, None);
+    ///  let mut client = accuweather::Accuweather::new(api_key, None, None);
     ///  client.set_location(Some(1234));
     ///  assert_eq!(client.location, Some(1234));
     /// ```
@@ -93,7 +117,7 @@ impl Accuweather {
     /// # Example
     /// ```
     ///  let api_key = "abcdefg".to_string();
-    ///  let client = accuweather::Accuweather::new(api_key, Some(12345));
+    ///  let client = accuweather::Accuweather::new(api_key, Some(12345), None);
     ///  client.get_hourly_forecasts(12);
     ///  let forecast_errors = client.get_hourly_forecasts(5);
     ///  assert!(forecast_errors.is_err());
@@ -116,6 +140,7 @@ impl Accuweather {
                 ("apikey", self.api_key.clone()),
                 ("details", "true".to_string()),
                 ("metric", "true".to_string()),
+                ("language", "en-us".to_string()),
             ],
         )?;
         match self.client.get(url).send()?.error_for_status()?.json() {
@@ -133,7 +158,7 @@ impl Accuweather {
     /// # Example
     /// ```
     ///  let api_key = "abcdefg".to_string();
-    ///  let client = accuweather::Accuweather::new(api_key, Some(12345));
+    ///  let client = accuweather::Accuweather::new(api_key, Some(12345), None);
     ///  client.get_daily_forecasts(5);
     ///  let forecast_errors = client.get_daily_forecasts(6);
     ///  assert!(forecast_errors.is_err());
@@ -156,6 +181,7 @@ impl Accuweather {
                 ("apikey", self.api_key.clone()),
                 ("details", "true".to_string()),
                 ("metric", "true".to_string()),
+                ("language", "en-us".to_string()),
             ],
         )?;
         match self.client.get(url).send()?.error_for_status()?.json() {
@@ -170,7 +196,7 @@ impl Accuweather {
     /// # Example
     /// ```
     ///  let api_key = "abcdefg".to_string();
-    ///  let client = accuweather::Accuweather::new(api_key, Some(12345));
+    ///  let client = accuweather::Accuweather::new(api_key, Some(12345), Some("fr-fr".to_string()));
     ///  client.get_current_conditions();
     /// ```
 
@@ -213,6 +239,7 @@ mod tests {
                 Matcher::UrlEncoded("apikey".into(), "abcdefg".into()),
                 Matcher::UrlEncoded("details".into(), "true".into()),
                 Matcher::UrlEncoded("metric".into(), "true".into()),
+                Matcher::UrlEncoded("language".into(), "en-us".into()),
             ]))
             .with_body(&daily5_json)
             .create();
@@ -228,6 +255,7 @@ mod tests {
                 Matcher::UrlEncoded("apikey".into(), "abcdefg".into()),
                 Matcher::UrlEncoded("details".into(), "true".into()),
                 Matcher::UrlEncoded("metric".into(), "true".into()),
+                Matcher::UrlEncoded("language".into(), "en-us".into()),
             ]))
             .with_body(&hourly12_json)
             .create();
@@ -256,7 +284,7 @@ mod tests {
     fn test_daily_forecast_ok() {
         let _mocks = set_mocks();
         let api_key = "abcdefg".to_string();
-        let client = Accuweather::new(api_key, Some(12345));
+        let client = Accuweather::new(api_key, Some(12345), None);
         let res_forecasts = client.get_daily_forecasts(5);
         let forecasts = res_forecasts.unwrap();
         assert_eq!(forecasts.daily_forecasts[0].temperature.minimum.value, 5.4);
@@ -265,7 +293,7 @@ mod tests {
     fn test_daily_forecast_nok_forbidden() {
         let _mocks = set_mocks();
         let api_key = "bad_key".to_string();
-        let client = Accuweather::new(api_key, Some(12345));
+        let client = Accuweather::new(api_key, Some(12345), None);
         let res_forecasts = client.get_daily_forecasts(5);
         assert!(res_forecasts.is_err());
     }
@@ -273,7 +301,7 @@ mod tests {
     fn test_daily_forecast_nok_badlocation() {
         let _mocks = set_mocks();
         let api_key = "bad_key".to_string();
-        let client = Accuweather::new(api_key, Some(123456));
+        let client = Accuweather::new(api_key, Some(123456), None);
         let res_forecasts = client.get_daily_forecasts(5);
         assert!(res_forecasts.is_err());
     }
@@ -282,7 +310,7 @@ mod tests {
     fn test_hourly_forecast_ok() {
         let _mocks = set_mocks();
         let api_key = "abcdefg".to_string();
-        let client = Accuweather::new(api_key, Some(12345));
+        let client = Accuweather::new(api_key, Some(12345), None);
         let res_forecasts = client.get_hourly_forecasts(12);
         let forecasts = res_forecasts.unwrap();
         assert_eq!(forecasts[11].temperature.value, 7.2);
@@ -291,7 +319,7 @@ mod tests {
     fn test_hourly_forecast_nok_forbidden() {
         let _mocks = set_mocks();
         let api_key = "bad_key".to_string();
-        let client = Accuweather::new(api_key, Some(12345));
+        let client = Accuweather::new(api_key, Some(12345), None);
         let res_forecasts = client.get_hourly_forecasts(12);
         assert!(res_forecasts.is_err());
     }
@@ -299,7 +327,7 @@ mod tests {
     fn test_hourly_forecast_nok_badlocation() {
         let _mocks = set_mocks();
         let api_key = "bad_key".to_string();
-        let client = Accuweather::new(api_key, Some(123456));
+        let client = Accuweather::new(api_key, Some(123456), None);
         let res_forecasts = client.get_hourly_forecasts(12);
         assert!(res_forecasts.is_err());
     }
@@ -308,7 +336,7 @@ mod tests {
     fn test_current_condition_ok() {
         let _mocks = set_mocks();
         let api_key = "abcdefg".to_string();
-        let client = Accuweather::new(api_key, Some(12345));
+        let client = Accuweather::new(api_key, Some(12345), None);
         let res_conditions = client.get_current_conditions();
         let conditions = res_conditions.unwrap();
         assert_eq!(conditions[0].temperature.metric.value, 27.9);
@@ -317,7 +345,7 @@ mod tests {
     fn test_current_condition_nok_forbidden() {
         let _mocks = set_mocks();
         let api_key = "bad_key".to_string();
-        let client = Accuweather::new(api_key, Some(12345));
+        let client = Accuweather::new(api_key, Some(12345), None);
         let res_conditions = client.get_current_conditions();
         assert!(res_conditions.is_err());
     }
@@ -325,7 +353,7 @@ mod tests {
     fn test_current_condition_nok_badlocation() {
         let _mocks = set_mocks();
         let api_key = "bad_key".to_string();
-        let client = Accuweather::new(api_key, Some(123456));
+        let client = Accuweather::new(api_key, Some(123456), None);
         let res_conditions = client.get_current_conditions();
         assert!(res_conditions.is_err());
     }
