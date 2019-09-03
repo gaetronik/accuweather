@@ -10,7 +10,7 @@ use std::fmt;
 
 pub mod types;
 
-type Result<T> = std::result::Result<T, Box<error::Error>>;
+type Result<T> = std::result::Result<T, Box<dyn error::Error>>;
 
 #[derive(Debug, Clone)]
 pub struct AccuweatherInvalidParameterError;
