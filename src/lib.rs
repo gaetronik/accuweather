@@ -5,7 +5,8 @@
 //! # Example
 //! ```
 //! extern crate accuweather;
-//!
+//! #[cfg(doctest)]
+//! let _mocks = tests::set_mocks();
 //! let api_key = "abcdefg".to_string();
 //! let client = accuweather::Accuweather::new(api_key, Some(12345), None);
 //! // get next 12 hours of hourly forecasts
@@ -140,7 +141,7 @@ impl Accuweather {
                 ("apikey", self.api_key.clone()),
                 ("details", "true".to_string()),
                 ("metric", "true".to_string()),
-                ("language", "en-us".to_string()),
+                ("language", self.language.clone()),
             ],
         )?;
         match self.client.get(url).send()?.error_for_status()?.json() {
@@ -181,7 +182,7 @@ impl Accuweather {
                 ("apikey", self.api_key.clone()),
                 ("details", "true".to_string()),
                 ("metric", "true".to_string()),
-                ("language", "en-us".to_string()),
+                ("language", self.language.clone()),
             ],
         )?;
         match self.client.get(url).send()?.error_for_status()?.json() {
@@ -211,7 +212,7 @@ impl Accuweather {
             &[
                 ("apikey", self.api_key.clone()),
                 ("details", "true".to_string()),
-                ("language", "en-us".to_string()),
+                ("language", self.language.clone()),
             ],
         )?;
         match self.client.get(url).send()?.error_for_status()?.json() {

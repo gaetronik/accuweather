@@ -1,7 +1,7 @@
 [package]
 name = "accuweather"
 description = "A library to fetch data from accuweather api"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Gaëtan Duchaussois <gaetan@pignouf.fr>"]
 edition = "2018"
 repository = "https://github.com/gaetronik/accuweather"
@@ -16,5 +16,5 @@ travis-ci = { repository = "gaetronik/accuweather", branch = "master" }
 reqwest = "^0.9.17"
 serde_json = "^1.0.40"
 serde = "^1.0.40"
-serde_derive = "1.0.94"
-mockito = "0.20.0"
+serde_derive = "^1.0.94"
+mockito = "^0.23.2"
