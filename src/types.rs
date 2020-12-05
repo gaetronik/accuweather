@@ -123,12 +123,12 @@ pub struct Sun {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Moon {
-    pub rise: String,
-    pub epoch_rise: i64,
-    pub set: String,
-    pub epoch_set: i64,
-    pub phase: String,
-    pub age: i32,
+    pub rise: Option<String>,
+    pub epoch_rise: Option<i64>,
+    pub set: Option<String>,
+    pub epoch_set: Option<i64>,
+    pub phase: Option<String>,
+    pub age: Option<i32>,
 }
 
 /// Representation of daily forecast
