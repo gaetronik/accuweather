@@ -11,11 +11,9 @@
 //! let client = accuweather::Accuweather::new(api_key, Some(12345), None);
 //! // get next 12 hours of hourly forecasts
 //! let hourly_forecasts = client.get_hourly_forecasts(12);
-//! 
+//!
 //! let daily_forecasts = client.get_daily_forecasts(5);
 //! let conditions = client.get_current_conditions();
-
-
 
 extern crate reqwest;
 #[macro_use]
@@ -54,7 +52,7 @@ impl error::Error for AccuweatherInvalidParameterError {
 pub struct Accuweather {
     pub client: Client,
     pub api_key: String,
-    pub location: Option<i32>,
+    pub location: Option<String>,
     pub language: String,
     base_url: String,
 }
@@ -73,7 +71,7 @@ impl Accuweather {
     /// }
     /// ```
 
-    pub fn new(api_key: String, location: Option<i32>, language: Option<String>) -> Self {
+    pub fn new(api_key: String, location: Option<String>, language: Option<String>) -> Self {
         #[cfg(not(test))]
         let url = "http://dataservice.accuweather.com";
         #[cfg(test)]
@@ -101,7 +99,7 @@ impl Accuweather {
     ///  client.set_location(Some(1234));
     ///  assert_eq!(client.location, Some(1234));
     /// ```
-    pub fn set_location(&mut self, location: Option<i32>) {
+    pub fn set_location(&mut self, location: Option<String>) {
         self.location = location;
     }
 
@@ -133,7 +131,7 @@ impl Accuweather {
             "{}/forecasts/v1/hourly/{}hour/{:?}",
             self.base_url,
             period,
-            self.location.unwrap()
+            self.location.as_ref().unwrap()
         );
         let url = Url::parse_with_params(
             &url,
@@ -171,10 +169,10 @@ impl Accuweather {
             _ => return Err(AccuweatherInvalidParameterError.into()),
         };
         let url = format!(
-            "{}/forecasts/v1/daily/{}day/{:?}",
+            "{}/forecasts/v1/daily/{}day/{}",
             self.base_url,
             period,
-            self.location.unwrap()
+            self.location.as_ref().unwrap()
         );
         let url = Url::parse_with_params(
             &url,
@@ -185,6 +183,7 @@ impl Accuweather {
                 ("language", self.language.clone()),
             ],
         )?;
+        // println!("{:?}", url);
         match self.client.get(url).send()?.error_for_status()?.json() {
             Ok(x) => Ok(x),
             Err(x) => Err(x.into()),
@@ -203,9 +202,9 @@ impl Accuweather {
 
     pub fn get_current_conditions(&self) -> Result<Vec<CurrentCondition>> {
         let url = format!(
-            "{}/currentconditions/v1/{:?}",
+            "{}/currentconditions/v1/{}",
             self.base_url,
-            self.location.unwrap()
+            self.location.as_ref().unwrap()
         );
         let url = Url::parse_with_params(
             &url,
