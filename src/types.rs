@@ -40,8 +40,10 @@ pub struct AirAndPollen {
     pub name: String,
     pub value: i32,
     pub category: String,
+    #[allow(dead_code)]
     category_value: i32,
     #[serde(default = "air_pollen_default_type")]
+    #[allow(dead_code)]
     r#type: String,
 }
 
@@ -66,6 +68,7 @@ pub struct Wind {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct DailyWindGust {
+    #[allow(dead_code)]
     speed: AccuweatherMeasurement,
 }
 
@@ -113,21 +116,21 @@ pub struct DegreeDaySummary {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Sun {
-    pub rise: String,
-    pub epoch_rise: i64,
-    pub set: String,
-    pub epoch_set: i64,
+    pub rise: Option<String>,
+    pub epoch_rise: Option<i64>,
+    pub set: Option<String>,
+    pub epoch_set: Option<i64>,
 }
 
 /// Representation of Moon information in daily forecast api.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Moon {
-    pub rise: String,
-    pub epoch_rise: i64,
-    pub set: String,
-    pub epoch_set: i64,
-    pub phase: String,
+    pub rise: Option<String>,
+    pub epoch_rise: Option<i64>,
+    pub set: Option<String>,
+    pub epoch_set: Option<i64>,
+    pub phase: Option<String>,
     pub age: i32,
 }
 
@@ -160,10 +163,10 @@ pub struct Headline {
     pub effective_epoch_date: i64,
     pub severity: i32,
     pub text: String,
-    pub category: String,
-    pub end_date: String,
-    pub end_epoch_date: i64,
-    pub mobile_link: String,
+    pub category: Option<String>,
+    pub end_date: Option<String>,
+    pub end_epoch_date: Option<i64>,
+    pub mobile_link: Option<String>,
     pub link: String,
 }
 
