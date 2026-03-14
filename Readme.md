@@ -1,3 +1,5 @@
+I have not updated this crate for too long. I archived it, feel free to fork
+
 # Accuweather crate
 [![Build Status](https://travis-ci.org/gaetronik/accuweather.svg)](https://travis-ci.org/gaetronik/accuweather)
 [![Crates.io](https://img.shields.io/crates/v/accuweather.svg)](https://crates.io/crates/accuweather)
