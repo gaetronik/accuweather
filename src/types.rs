@@ -131,7 +131,8 @@ pub struct Moon {
     pub set: Option<String>,
     pub epoch_set: Option<i64>,
     pub phase: Option<String>,
-    pub age: i32,
+    pub age: Option<i32>,
+
 }
 
 /// Representation of daily forecast
